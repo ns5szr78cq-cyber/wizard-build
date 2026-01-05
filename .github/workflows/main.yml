@@ -4,10 +4,10 @@ jobs:
   build:
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - run: |
           xcrun -sdk iphoneos clang -dynamiclib -arch arm64 -framework Foundation -lobjc wizardcrackv2.m -o wizardcrackv2.dylib
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: my-dylib
           path: wizardcrackv2.dylib
