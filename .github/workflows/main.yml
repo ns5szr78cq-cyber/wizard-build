@@ -6,18 +6,18 @@ jobs:
     runs-on: macos-latest
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4 # تحديث للإصدار 4
 
-      - name: Setup Theos (المحرك)
+      - name: Setup Theos
         run: |
           sudo git clone --recursive https://github.com/theos/theos.git /opt/theos
           sudo chown -R $(id -u):$(id -g) /opt/theos
           git clone https://github.com/theos/sdks.git /opt/theos/sdks
 
-      - name: Build Library (تحويل الكود لمكتبة)
+      - name: Build Library
         run: |
           export THEOS=/opt/theos
-          # إنشاء ملف الإعدادات أوتوماتيكياً
+          # إنشاء الملفات الضرورية للبناء
           echo "ARCHS = arm64 arm64e
           TARGET = iphone:clang:latest:14.0
           include \$(THEOS)/makefiles/common.mk
@@ -26,11 +26,11 @@ jobs:
           DooNUP_CFLAGS = -fobjc-arc
           include \$(THEOS_MAKE_PATH)/tweak.mk" > Makefile
 
-          # هنا "المصنع" بيجمع الملفات ويطلع الـ dylib
+          # عملية التجميع
           make package FINAL_PACKAGE=1
           
-      - name: Download Your Dylib (تحميل المكتبة)
-        uses: actions/upload-artifact@v3
+      - name: Upload Finished Dylib
+        uses: actions/upload-artifact@v4 # ده الحل! التحديث للإصدار 4
         with:
-          name: DooN-Dylib-Result
+          name: DooN-Dylib-Fixed
           path: .theos/obj/debug/*.dylib
