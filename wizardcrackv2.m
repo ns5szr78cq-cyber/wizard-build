@@ -3,10 +3,25 @@
 #import <UIKit/UIKit.h>
 
 @implementation NSObject (WizardHook)
-// دالة لرد بـ "نعم"
+
+// 1. إعطاء إشارة "نعم" لأي فحص داخلي
 - (_Bool)hooked_true { return YES; }
-// دالة لرد برمز النجاح من السيرفر (200 تعني تم القبول)
+
+// 2. تزييف كود استجابة السيرفر ليكون 200 (تم بنجاح)
 - (NSInteger)hooked_status { return 200; }
+
+// 3. تزييف محتوى البيانات لتبدو كأنها رد نجاح من سيرفر حقيقي
+- (NSData *)hooked_data {
+    NSDictionary *dict = @{
+        @"status": @"success",
+        @"code": @200,
+        @"valid": @YES,
+        @"message": @"Authorized",
+        @"expire_date": @"2099-01-01"
+    };
+    return [NSJSONSerialization dataWithJSONObject:dict options:0 error:nil];
+}
+
 @end
 
 static void ShowAlert() {
@@ -14,7 +29,7 @@ static void ShowAlert() {
         UIViewController *root = [UIApplication sharedApplication].keyWindow.rootViewController;
         if (root) {
             UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"DooN UP ✅" 
-                                           message:@"تم تفعيل التخطي الشامل وتزييف رد السيرفر\nاكتب أي كود وجرب الآن" 
+                                           message:@"تم تفعيل التخطّي العميق للبيانات\nاكتب أي كود عشوائي وجرب الآن" 
                                            preferredStyle:UIAlertControllerStyleAlert];
             [alert addAction:[UIAlertAction actionWithTitle:@"استمرار" style:UIAlertActionStyleDefault handler:nil]];
             [root presentViewController:alert animated:YES completion:nil];
@@ -24,30 +39,35 @@ static void ShowAlert() {
 
 __attribute__((constructor))
 static void init() {
+    // إظهار رسالتك المفضلة
     ShowAlert();
 
-    // 1. استهداف كلاسات الاتصال وتخطي التحقق الداخلي
-    NSArray *classes = @[@"GCDWebServerConnection", @"GCDWebServer"];
-    NSArray *methods = @[@"_checkAuthentication", @"isAuthorized", @"isAuthenticated", @"isValid"];
-    
-    for (NSString *className in classes) {
-        Class c = NSClassFromString(className);
-        if (c) {
-            for (NSString *m in methods) {
-                Method orig = class_getInstanceMethod(c, NSSelectorFromString(m));
-                if (orig) {
-                    method_setImplementation(orig, method_getImplementation(class_getInstanceMethod([NSObject class], @selector(hooked_true))));
-                }
+    // استهداف المكتبة المسؤولة عن الاتصال
+    Class connClass = NSClassFromString(@"GCDWebServerConnection");
+    Class respClass = NSClassFromString(@"GCDWebServerResponse");
+
+    if (connClass) {
+        // تخطي الحماية الأساسية
+        NSArray *authMethods = @[@"_checkAuthentication", @"isAuthorized", @"isAuthenticated"];
+        for (NSString *mName in authMethods) {
+            Method orig = class_getInstanceMethod(connClass, NSSelectorFromString(mName));
+            if (orig) {
+                method_setImplementation(orig, method_getImplementation(class_getInstanceMethod([NSObject class], @selector(hooked_true))));
             }
         }
     }
 
-    // 2. تزييف رد السيرفر ليكون دائماً "ناجح" (Status 200)
-    Class responseClass = NSClassFromString(@"GCDWebServerResponse");
-    if (responseClass) {
-        Method origStatus = class_getInstanceMethod(responseClass, NSSelectorFromString(@"statusCode"));
-        if (origStatus) {
-            method_setImplementation(origStatus, method_getImplementation(class_getInstanceMethod([NSObject class], @selector(hooked_status))));
+    if (respClass) {
+        // إجبار السيرفر على إرسال حالة "نجاح"
+        Method status = class_getInstanceMethod(respClass, NSSelectorFromString(@"statusCode"));
+        if (status) {
+            method_setImplementation(status, method_getImplementation(class_getInstanceMethod([NSObject class], @selector(hooked_status))));
+        }
+
+        // حقن بيانات النجاح الوهمية (تاريخ انتهاء بعيد جداً)
+        Method data = class_getInstanceMethod(respClass, NSSelectorFromString(@"data"));
+        if (data) {
+            method_setImplementation(data, method_getImplementation(class_getInstanceMethod([NSObject class], @selector(hooked_data))));
         }
     }
 }
