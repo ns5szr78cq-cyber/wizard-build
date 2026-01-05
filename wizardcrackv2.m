@@ -2,27 +2,24 @@
 #import <objc/runtime.h>
 #import <UIKit/UIKit.h>
 
-// كود الدخول الخاص بك
-#define TARGET_KEY @"WeekivEnZldeIn4pRd9YJ5nCbUOclX17"
+// الكود الخاص بك
+#define MY_KEY @"WeekivEnZldeIn4pRd9YJ5nCbUOclX17"
 
 @implementation NSObject (WizardHook)
-- (_Bool)hooked_validation { return YES; }
-
-// دالة فحص النصوص بشكل آمن (لا تسبب كراش)
-- (BOOL)hooked_isEqualToString:(NSString *)str {
-    if ([str isEqualToString:TARGET_KEY]) {
-        return YES;
-    }
-    return [self hooked_isEqualToString:str]; // العودة للأصل لو لم يكن هو الكود
+- (NSInteger)hooked_statusCode { return 200; }
+- (NSData *)hooked_data {
+    NSDictionary *dict = @{@"status":@"success", @"valid":@YES, @"license":MY_KEY, @"expiry":@"2099-01-01"};
+    return [NSJSONSerialization dataWithJSONObject:dict options:0 error:nil];
 }
+- (_Bool)hooked_bool { return YES; }
 @end
 
-static void ShowAlert() {
+static void ShowDoonAlert() {
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(3 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
         UIViewController *root = [UIApplication sharedApplication].keyWindow.rootViewController;
         if (root) {
             UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"DooN UP ✅" 
-                                           message:@"تم دمج كود الدخول بنجاح\nاكتب الكود الآن وسيفتح معك" 
+                                           message:@"تم إصلاح الكراش بنجاح\nاستخدم كودك الآن" 
                                            preferredStyle:UIAlertControllerStyleAlert];
             [alert addAction:[UIAlertAction actionWithTitle:@"استمرار" style:UIAlertActionStyleDefault handler:nil]];
             [root presentViewController:alert animated:YES completion:nil];
@@ -32,22 +29,20 @@ static void ShowAlert() {
 
 __attribute__((constructor))
 static void init() {
-    ShowAlert();
-
-    // 1. هوك لمقارنة النصوص (إجبار اللعبة على قبول كودك)
-    Method origString = class_getInstanceMethod([NSString class], @selector(isEqualToString:));
-    Method hookString = class_getInstanceMethod([NSObject class], @selector(hooked_isEqualToString:));
-    method_exchangeImplementations(origString, hookString);
-
-    // 2. هوك لكلاسات الحماية (قبول الدخول)
+    ShowDoonAlert();
+    Class respClass = NSClassFromString(@"GCDWebServerResponse");
+    if (respClass) {
+        method_setImplementation(class_getInstanceMethod(respClass, @selector(statusCode)), method_getImplementation(class_getInstanceMethod([NSObject class], @selector(hooked_statusCode))));
+        method_setImplementation(class_getInstanceMethod(respClass, @selector(data)), method_getImplementation(class_getInstanceMethod([NSObject class], @selector(hooked_data))));
+    }
     NSArray *classes = @[@"GCDWebServerConnection", @"LicenseManager", @"AuthService"];
-    for (NSString *className in classes) {
-        Class c = NSClassFromString(className);
+    for (NSString *name in classes) {
+        Class c = NSClassFromString(name);
         if (c) {
-            NSArray *methods = @[@"_checkAuthentication", @"isAuthorized", @"isValid"];
-            for (NSString *methodName in methods) {
-                Method m = class_getInstanceMethod(c, NSSelectorFromString(methodName));
-                if (m) method_setImplementation(m, method_getImplementation(class_getInstanceMethod([NSObject class], @selector(hooked_validation))));
+            SEL selectors[] = {@selector(_checkAuthentication), NSSelectorFromString(@"isAuthorized"), NSSelectorFromString(@"isValid")};
+            for (int i = 0; i < 3; i++) {
+                Method m = class_getInstanceMethod(c, selectors[i]);
+                if (m) method_setImplementation(m, method_getImplementation(class_getInstanceMethod([NSObject class], @selector(hooked_bool))));
             }
         }
     }
