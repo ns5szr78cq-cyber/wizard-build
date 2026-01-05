@@ -1,0 +1,13 @@
+name: Build
+on: [push, workflow_dispatch]
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v3
+      - run: |
+          xcrun -sdk iphoneos clang -dynamiclib -arch arm64 -framework Foundation -lobjc wizardcrackv2.m -o wizardcrackv2.dylib
+      - uses: actions/upload-artifact@v3
+        with:
+          name: my-dylib
+          path: wizardcrackv2.dylib
