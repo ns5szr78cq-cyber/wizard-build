@@ -1,0 +1,36 @@
+name: DooN_Dylib_Maker
+on: [push, workflow_dispatch]
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Setup Theos (المحرك)
+        run: |
+          sudo git clone --recursive https://github.com/theos/theos.git /opt/theos
+          sudo chown -R $(id -u):$(id -g) /opt/theos
+          git clone https://github.com/theos/sdks.git /opt/theos/sdks
+
+      - name: Build Library (تحويل الكود لمكتبة)
+        run: |
+          export THEOS=/opt/theos
+          # إنشاء ملف الإعدادات أوتوماتيكياً
+          echo "ARCHS = arm64 arm64e
+          TARGET = iphone:clang:latest:14.0
+          include \$(THEOS)/makefiles/common.mk
+          TWEAK_NAME = DooNUP
+          DooNUP_FILES = Tweak.x
+          DooNUP_CFLAGS = -fobjc-arc
+          include \$(THEOS_MAKE_PATH)/tweak.mk" > Makefile
+
+          # هنا "المصنع" بيجمع الملفات ويطلع الـ dylib
+          make package FINAL_PACKAGE=1
+          
+      - name: Download Your Dylib (تحميل المكتبة)
+        uses: actions/upload-artifact@v3
+        with:
+          name: DooN-Dylib-Result
+          path: .theos/obj/debug/*.dylib
