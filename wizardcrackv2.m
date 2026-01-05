@@ -2,56 +2,67 @@
 #import <objc/runtime.h>
 #import <UIKit/UIKit.h>
 
-@implementation NSObject (WizardUltimateBypass)
-// دوال ثابتة لضمان التفعيل التلقائي
-- (_Bool)isWizardActive { return YES; }
-- (NSString *)wizardExpiryDate { return @"2030-01-01"; }
-@end
+// إجابات إجبارية لأي سؤال من الحماية
+static _Bool returnYes() { return YES; }
+static id returnKey() { return @"WeekivEnZldeIn4pRd9YJ5nCbUOclX17"; }
 
 __attribute__((constructor))
 static void init() {
-    // 1. منع أي محاولة إغلاق للعبة (Anti-Crash)
-    Method terminate = class_getInstanceMethod([UIApplication class], NSSelectorFromString(@"terminateWithSuccess"));
-    if (terminate) method_setImplementation(terminate, imp_implementationWithBlock(^{}));
+    // 1. منع الكراش فوراً
+    Method exitM = class_getInstanceMethod([UIApplication class], NSSelectorFromString(@"terminateWithSuccess"));
+    if (exitM) method_setImplementation(exitM, imp_implementationWithBlock(^{}));
 
-    // 2. تفعيل المنيو تلقائياً بمجرد التشغيل
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-        
-        // مسح الذاكرة بحثاً عن كلاسات Wizard وتعديلها فوراً
-        int numClasses = objc_getClassList(NULL, 0);
-        if (numClasses > 0) {
-            Class *classes = (Class *)malloc(sizeof(Class) * numClasses);
-            numClasses = objc_getClassList(classes, numClasses);
-            for (int i = 0; i < numClasses; i++) {
-                NSString *cName = NSStringFromClass(classes[i]);
-                
-                // استهداف كلاسات المنيو بناءً على ما وجدناه في الـ Info.plist
-                if ([cName containsString:@"Wizard"] || [cName containsString:@"Auth"]) {
-                    unsigned int mCount;
-                    Method *methods = class_copyMethodList(classes[i], &mCount);
-                    for (unsigned int j = 0; j < mCount; j++) {
-                        SEL sel = method_getName(methods[j]);
-                        NSString *mName = NSStringFromSelector(sel);
-                        
-                        // كسر كل شاشات التحقق والكود
-                        if ([mName hasPrefix:@"is"] || [mName containsString:@"Valid"] || [mName containsString:@"check"]) {
-                            method_setImplementation(methods[j], method_getImplementation(class_getInstanceMethod([NSObject class], @selector(isWizardActive))));
+    // 2. هجوم متكرر على الذاكرة لضمان صيد ملف الـ 80 ميجا (Core)
+    for (float d = 1.0; d <= 7.0; d += 2.0) {
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(d * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            int numClasses = objc_getClassList(NULL, 0);
+            if (numClasses > 0) {
+                Class *classes = (Class *)malloc(sizeof(Class) * numClasses);
+                numClasses = objc_getClassList(classes, numClasses);
+                for (int i = 0; i < numClasses; i++) {
+                    NSString *cName = NSStringFromClass(classes[i]);
+                    // استهداف كل كلاسات Wizard و Core
+                    if ([cName containsString:@"Wizard"] || [cName containsString:@"Core"] || [cName containsString:@"Sentry"]) {
+                        unsigned int mCount;
+                        Method *methods = class_copyMethodList(classes[i], &mCount);
+                        for (unsigned int j = 0; j < mCount; j++) {
+                            SEL sel = method_getName(methods[j]);
+                            NSString *mName = NSStringFromSelector(sel);
+                            // كسر دوال التحقق بجميع أنواعها
+                            if ([mName hasPrefix:@"is"] || [mName containsString:@"Valid"] || [mName containsString:@"Auth"]) {
+                                class_replaceMethod(classes[i], sel, (IMP)returnYes, "B@:");
+                            }
+                            // حقن كود تفعيل افتراضي في حال طلبه
+                            if ([mName containsString:@"Key"] || [mName containsString:@"Code"]) {
+                                class_replaceMethod(classes[i], sel, (IMP)returnKey, "@@:");
+                            }
                         }
+                        free(methods);
                     }
-                    free(methods);
                 }
+                free(classes);
             }
-            free(classes);
-        }
-        
-        // 3. إظهار رسالة النجاح التي طلبتها
+        });
+    }
+
+    // 3. رسالة DooN UP النهائية وإجبار المنيو على الظهور
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(3.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
         UIWindow *window = [UIApplication sharedApplication].keyWindow;
-        if (window.rootViewController) {
-            UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"DooN UP" 
-                                           message:@"تم التفعيل بنجاح" 
-                                           preferredStyle:UIAlertControllerStyleAlert];
-            [alert addAction:[UIAlertAction actionWithTitle:@"دخول" style:UIAlertActionStyleDefault handler:nil]];
-            [window.rootViewController presentViewController:alert animated:YES completion:nil];
-        }
+        UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"DooN UP" 
+                                       message:@"تم التفعيل بنجاح ✅\nالمنيو جاهز الآن" 
+                                       preferredStyle:UIAlertControllerStyleAlert];
+        
+        [alert addAction:[UIAlertAction actionWithTitle:@"استمرار" style:UIAlertActionStyleDefault handler:^(UIAlertAction * action) {
+            // محاولة إظهار أي واجهة مخفية تابعة للمنيو
+            for (UIView *v in window.subviews) {
+                v.hidden = NO; 
+                v.alpha = 1.0;
+                if ([NSStringFromClass([v class]) containsString:@"Wizard"]) [window bringSubviewToFront:v];
+            }
+            // إرسال إشارات برمجية لإظهار المنيو
+            [[NSNotificationCenter defaultCenter] postNotificationName:@"WizardShowMenu" object:nil];
+            [[NSNotificationCenter defaultCenter] postNotificationName:@"ShowMenu" object:nil];
+        }]];
+        [window.rootViewController presentViewController:alert animated:YES completion:nil];
     });
 }
