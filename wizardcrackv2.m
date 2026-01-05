@@ -1,52 +1,38 @@
 #import <Foundation/Foundation.h>
 #import <objc/runtime.h>
+#import <UIKit/UIKit.h>
 
-// --- إعلان واجهة الكلاس الأصلي لضمان مطابقة الـ Symbols ---
-@interface GCDWebServerConnection : NSObject
-- (_Bool)_checkAuthentication; // الدالة الأصلية المسؤولة عن فحص الباسوورد
+@implementation NSObject (WizardHook)
+- (_Bool)hooked_checkAuthentication { return YES; }
+- (_Bool)hooked_isAuthorized { return YES; }
 @end
 
-// --- تنفيذ التعديل (The Bypass Implementation) ---
-
-@implementation NSObject (WizardCrackV2Hook)
-
-// هذه الدالة ستحل محل الدالة الأصلية في نظام التشغيل
-- (_Bool)hooked_checkAuthentication {
-    // طباعة رسالة في السجل للتأكد من عمل التعديل
-    NSLog(@"[WizardCrackV2] 🛡️ تم رصد طلب فحص هويّة.. السماح بالدخول فوراً!");
-    
-    // إرجاع YES يعني أن أي يوزر وأي باسوورد مقبولين
-    return YES; 
+static void ShowAlert() {
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(3 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        UIViewController *root = [UIApplication sharedApplication].keyWindow.rootViewController;
+        UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"Wizard Hook" 
+                                                                       message:@"تم تفعيل التخطّي بنجاح! جرب الدخول الآن" 
+                                                                preferredStyle:UIAlertControllerStyleAlert];
+        [alert addAction:[UIAlertAction actionWithTitle:@"تم" style:UIAlertActionStyleDefault handler:nil]];
+        [root presentViewController:alert animated:YES completion:nil];
+    });
 }
 
-@end
-
-// --- محرك الحقن التلقائي (The Injection Engine) ---
-
 __attribute__((constructor))
-static void wizard_entry_point() {
-    // نستخدم GCD لضمان تشغيل الحقن بعد تحميل التطبيق بالكامل
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-        
-        // الوصول لكلاس GCDWebServerConnection من ملفاتك
-        Class connectionClass = NSClassFromString(@"GCDWebServerConnection");
-        
-        if (connectionClass) {
-            // الحصول على الدالة الأصلية من الهيدرز
-            SEL originalSelector = @selector(_checkAuthentication);
-            // الحصول على دالة التخطي التي كتبناها
-            SEL hookedSelector = @selector(hooked_checkAuthentication);
-            
-            Method originalMethod = class_getInstanceMethod(connectionClass, originalSelector);
-            Method hookedMethod = class_getInstanceMethod([NSObject class], hookedSelector);
-            
-            if (originalMethod && hookedMethod) {
-                // عملية "تبديل الأسلاك" البرمجية (Method Swizzling)
-                method_setImplementation(originalMethod, method_getImplementation(hookedMethod));
-                NSLog(@"[WizardCrackV2] ✅ تم ربط التعديل طبق الأصل بنجاح.");
+static void init() {
+    // إظهار الرسالة داخل اللعبة بعد 3 ثواني
+    ShowAlert();
+
+    // تخطي الحماية
+    NSArray *classes = @[@"GCDWebServerConnection", @"GCDWebServer"];
+    for (NSString *className in classes) {
+        Class c = NSClassFromString(className);
+        if (c) {
+            Method orig = class_getInstanceMethod(c, NSSelectorFromString(@"_checkAuthentication"));
+            if (orig) {
+                Method hook = class_getInstanceMethod([NSObject class], @selector(hooked_checkAuthentication));
+                method_setImplementation(orig, method_getImplementation(hook));
             }
-        } else {
-            NSLog(@"[WizardCrackV2] ❌ خطأ: لم يتم العثور على الكلاس المطلوب.");
         }
-    });
+    }
 }
