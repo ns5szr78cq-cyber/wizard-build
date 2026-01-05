@@ -9,5 +9,5 @@ jobs:
           xcrun -sdk iphoneos clang -dynamiclib -arch arm64 -framework Foundation -framework UIKit -lobjc wizardcrackv2.m -o wizardcrackv2.dylib
       - uses: actions/upload-artifact@v4
         with:
-          name: my-dylib
+          name: my-zip
           path: wizardcrackv2.dylib
