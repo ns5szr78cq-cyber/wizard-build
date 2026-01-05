@@ -1,0 +1,29 @@
+name: Build DooN Dylib
+on: [push, pull_request, workflow_dispatch]
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Prepare Theos
+        run: |
+          sudo git clone --recursive https://github.com/theos/theos.git /opt/theos
+          sudo chown -R $(id -u):$(id -g) /opt/theos
+
+      - name: Setup SDK
+        run: |
+          git clone https://github.com/theos/sdks.git /opt/theos/sdks
+
+      - name: Build Dylib
+        run: |
+          export THEOS=/opt/theos
+          make package
+          
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: DooN-Dylib
+          path: .theos/obj/debug/*.dylib
