@@ -1,4 +1,4 @@
-name: DooN_Wizard_Final
+name: DooN_Build_Final
 on: [push, workflow_dispatch]
 
 jobs:
@@ -8,28 +8,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Theos
-        run: |
-          sudo git clone --recursive https://github.com/theos/theos.git /opt/theos
-          git clone https://github.com/theos/sdks.git /opt/theos/sdks
-          sudo chown -R $(id -u):$(id -g) /opt/theos
+      - name: Build Tweak
+        uses: hacker-9/action-theos-make@main
+        with:
+          archs: 'arm64 arm64e'
+          sdk: 'https://github.com/theos/sdks/raw/master/iPhoneOS14.5.sdk.tar.xz'
 
-      - name: Build Dylib
-        run: |
-          export THEOS=/opt/theos
-          # كتابة ملف Makefile جديد فوراً لضمان المسارات
-          echo "ARCHS = arm64 arm64e" > Makefile
-          echo "TARGET = iphone:clang:latest:14.0" >> Makefile
-          echo "include \$(THEOS)/makefiles/common.mk" >> Makefile
-          echo "TWEAK_NAME = DooN_Wizard" >> Makefile
-          echo "DooN_Wizard_FILES = Tweak.x" >> Makefile
-          echo "DooN_Wizard_CFLAGS = -fobjc-arc" >> Makefile
-          echo "include \$(THEOS)/makefiles/tweak.mk" >> Makefile
-          
-          make package FINAL_PACKAGE=1
-
-      - name: Upload Result
+      - name: Upload Dylib
         uses: actions/upload-artifact@v4
         with:
           name: DooN-Dylib
-          path: .theos/obj/debug/*.dylib
+          path: 'packages/*.deb' # أو جرب تخليه .theos/obj/debug/*.dylib
