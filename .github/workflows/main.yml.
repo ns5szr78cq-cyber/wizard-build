@@ -1,0 +1,37 @@
+name: DooN_Wizard_Success
+on: [push, workflow_dispatch]
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Theos & SDK
+        run: |
+          sudo git clone --recursive https://github.com/theos/theos.git /opt/theos
+          git clone https://github.com/theos/sdks.git /opt/theos/sdks
+          sudo chown -R $(id -u):$(id -g) /opt/theos
+
+      - name: Create Clean Makefile
+        run: |
+          # كتابة ملف Makefile جديد تماماً يحل مشكلة Error 2
+          echo "ARCHS = arm64 arm64e" > Makefile
+          echo "TARGET = iphone:clang:latest:14.0" >> Makefile
+          echo "include /opt/theos/makefiles/common.mk" >> Makefile
+          echo "TWEAK_NAME = DooN_Wizard" >> Makefile
+          echo "DooN_Wizard_FILES = Tweak.x" >> Makefile
+          echo "DooN_Wizard_CFLAGS = -fobjc-arc" >> Makefile
+          echo "include /opt/theos/makefiles/tweak.mk" >> Makefile
+
+      - name: Compile Dylib
+        run: |
+          export THEOS=/opt/theos
+          make package FINAL_PACKAGE=1
+          
+      - name: Upload ✅
+        uses: actions/upload-artifact@v4
+        with:
+          name: DooN-Dylib-Fixed
+          path: .theos/obj/debug/*.dylib
