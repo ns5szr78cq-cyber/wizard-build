@@ -1,26 +1,22 @@
-name: DooN_Build
+name: DooN_Final_Fix
 on: [push, workflow_dispatch]
-
 jobs:
   build:
     runs-on: macos-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Setup Theos
         run: |
           sudo git clone --recursive https://github.com/theos/theos.git /opt/theos
           sudo chown -R $(id -u):$(id -g) /opt/theos
-          # تحميل الـ SDK عشان المصنع ميتعطلش
+          # تحميل الـ SDK وتثبيته في المسار اللي الـ Makefile بيدور عليه
           git clone https://github.com/theos/sdks.git /opt/theos/sdks
-
-      - name: Build Dylib
+      - name: Build
         run: |
           export THEOS=/opt/theos
-          # أمر البناء المباشر
-          make package FINAL_PACKAGE=1
-          
+          # أمر التنظيف والبيناء
+          make clean package FINAL_PACKAGE=1
       - name: Upload
         uses: actions/upload-artifact@v4
         with:

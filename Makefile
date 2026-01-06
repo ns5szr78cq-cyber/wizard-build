@@ -7,4 +7,4 @@ TWEAK_NAME = DooN_Wizard
 DooN_Wizard_FILES = Tweak.x
 DooN_Wizard_CFLAGS = -fobjc-arc
 
-include $(THEOS_MAKE_PATH)/tweak.mk
+include $(THEOS)/makefiles/tweak.mk
