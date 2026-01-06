@@ -1,4 +1,4 @@
-name: DooN_Wizard_AutoFix
+name: DooN_Wizard_Final_Fix
 on: [push, workflow_dispatch]
 
 jobs:
@@ -10,33 +10,35 @@ jobs:
 
       - name: Setup Theos
         run: |
+          # مسح أي بقايا قديمة لضمان عدم حدوث Error 128
+          sudo rm -rf /opt/theos
+          # تحميل Theos من جديد
           sudo git clone --recursive https://github.com/theos/theos.git /opt/theos
-          git clone https://github.com/theos/sdks.git /opt/theos/sdks
+          # تحميل الـ SDK في المسار الصحيح
+          sudo git clone https://github.com/theos/sdks.git /opt/theos/sdks
           sudo chown -R $(id -u):$(id -g) /opt/theos
 
-      - name: Auto-Create Project Files
+      - name: Create Project Files
         run: |
-          # 1. إنشاء ملف الـ control (اللي كان مسبب الخطأ)
+          # إنشاء ملف الـ control
           echo "Package: com.doon.wizard" > control
           echo "Name: DooN UP ✅" >> control
           echo "Version: 1.0" >> control
           echo "Architecture: iphoneos-arm" >> control
-          echo "Description: Bypass for Wizard Framework" >> control
-          echo "Author: DooN" >> control
-          echo "Section: Tweaks" >> control
+          echo "Description: Bypass for Wizard" >> control
 
-          # 2. إنشاء ملف الـ Tweak.x (كود الرسالة والكسر)
+          # إنشاء كود الكسر والرسالة (Tweak.x)
           echo "#import <UIKit/UIKit.h>" > Tweak.x
           echo "%ctor {" >> Tweak.x
           echo "    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(3.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{" >> Tweak.x
           echo "        UIWindow *win = [UIApplication sharedApplication].keyWindow;" >> Tweak.x
-          echo "        UIAlertController *alert = [UIAlertController alertControllerWithTitle:@\"DooN UP ✅\" message:@\"تم الكسر والتفعيل بنجاح\\nاستمتع يا وحش\" preferredStyle:1];" >> Tweak.x
+          echo "        UIAlertController *alert = [UIAlertController alertControllerWithTitle:@\"DooN UP ✅\" message:@\"تم التفعيل بنجاح\\nاستمتع يا وحش\" preferredStyle:1];" >> Tweak.x
           echo "        [alert addAction:[UIAlertAction actionWithTitle:@\"دخول\" style:0 handler:nil]];" >> Tweak.x
           echo "        [win.rootViewController presentViewController:alert animated:YES completion:nil];" >> Tweak.x
           echo "    });" >> Tweak.x
           echo "}" >> Tweak.x
 
-          # 3. إنشاء ملف الـ Makefile بمسارات مباشرة
+          # إنشاء الـ Makefile بمسارات ثابتة
           echo "ARCHS = arm64 arm64e" > Makefile
           echo "TARGET = iphone:clang:latest:14.0" >> Makefile
           echo "include /opt/theos/makefiles/common.mk" >> Makefile
@@ -45,7 +47,7 @@ jobs:
           echo "DooN_Wizard_CFLAGS = -fobjc-arc" >> Makefile
           echo "include /opt/theos/makefiles/tweak.mk" >> Makefile
 
-      - name: Run Build
+      - name: Build Dylib
         run: |
           export THEOS=/opt/theos
           make package FINAL_PACKAGE=1
