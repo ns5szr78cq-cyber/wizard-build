@@ -1,50 +1,21 @@
-name: DooN_Dylib_Maker_Final
+name: DooN_Build
 on: [push, workflow_dispatch]
-
 jobs:
   build:
     runs-on: macos-latest
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4 # تحديث الإصدار لحل الصورة الأولى
-
-      - name: Setup Theos (Fix Error 128)
+      - uses: actions/checkout@v4
+      - name: Setup Theos
         run: |
-          # تنظيف كامل للمسارات قبل البدء
-          sudo rm -rf $GITHUB_WORKSPACE/theos
-          # تحميل المحرك في مسار العمل المفتوح (لتجنب مشاكل الصلاحيات)
-          git clone --recursive https://github.com/theos/theos.git $GITHUB_WORKSPACE/theos
-          echo "THEOS=$GITHUB_WORKSPACE/theos" >> $GITHUB_ENV
-
-      - name: Setup SDK
+          sudo git clone --recursive https://github.com/theos/theos.git /opt/theos
+          sudo chown -R $(id -u):$(id -g) /opt/theos
+          git clone https://github.com/theos/sdks.git /opt/theos/sdks
+      - name: Build
         run: |
-          git clone https://github.com/theos/sdks.git $GITHUB_WORKSPACE/theos/sdks
-
-      - name: Create Build Script
-        run: |
-          # كتابة ملف الإعدادات بطريقة الـ Heredoc لضمان عدم وجود أخطاء في الرموز
-          cat << 'EOF' > Makefile
-          ARCHS = arm64 arm64e
-          TARGET = iphone:clang:latest:14.0
-          include $(THEOS)/makefiles/common.mk
-          TWEAK_NAME = DooNUP
-          DooNUP_FILES = Tweak.x
-          DooNUP_CFLAGS = -fobjc-arc
-          include $(THEOS_MAKE_PATH)/tweak.mk
-          EOF
-
-          # التأكد من وجود ملف التويك ولو فاضي عشان ميعطيش خطأ
-          if [ ! -f Tweak.x ]; then
-            echo "%ctor { NSLog(@\"DooN UP Loaded\"); }" > Tweak.x
-          fi
-
-      - name: Compile Library
-        run: |
-          # تشغيل عملية التحويل لمكتبة
+          export THEOS=/opt/theos
           make package FINAL_PACKAGE=1
-          
-      - name: Upload Finished Dylib
-        uses: actions/upload-artifact@v4 # حل نهائي لمشكلة v3
+      - name: Upload
+        uses: actions/upload-artifact@v4
         with:
-          name: DooN-Dylib-Ready
+          name: DooN-Dylib
           path: .theos/obj/debug/*.dylib

@@ -1,0 +1,8 @@
+Package: com.doon.wizard
+Name: DooN UP ✅
+Depends: mobilesubstrate
+Version: 1.0
+Architecture: iphoneos-arm
+Description: Bypass for Wizard Framework
+Author: DooN
+Section: Tweaks
