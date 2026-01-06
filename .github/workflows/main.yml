@@ -35,9 +35,7 @@ jobs:
           echo "        UIAlertController *alert = [UIAlertController alertControllerWithTitle:@\"DooN UP ✅\" message:@\"تم التفعيل بنجاح\\nاستمتع يا وحش\" preferredStyle:1];" >> Tweak.x
           echo "        [alert addAction:[UIAlertAction actionWithTitle:@\"دخول\" style:0 handler:nil]];" >> Tweak.x
           echo "        [win.rootViewController presentViewController:alert animated:YES completion:nil];" >> Tweak.x
-          echo "    });" >> Tweak.x
           echo "}" >> Tweak.x
-
           # إنشاء الـ Makefile بمسارات ثابتة
           echo "ARCHS = arm64 arm64e" > Makefile
           echo "TARGET = iphone:clang:latest:14.0" >> Makefile
